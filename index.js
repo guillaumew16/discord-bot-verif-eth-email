@@ -1,7 +1,10 @@
 const Discord = require('discord.js');
 const config = require('./config.json');
+const nodemailer = require("nodemailer");
+const showdown  = require('showdown');
 
 const client = new Discord.Client();
+const converter = new showdown.Converter();
 
 const botName = client.user.username;
 const botMail = config.transportOptions.auth;
@@ -47,8 +50,7 @@ const mailDefaults = {
 		name: botName,
 		address: botMail.user
 	},
-	cc: botMail.user,
-	subject: `Verify your identity on Discord server ${guildName}`
+	cc: botMail.user
 };
 const transporter = nodemailer.createTransport(config.transportOptions, mailDefaults);
 
@@ -61,11 +63,15 @@ transporter.verify(function (error, success) {
 	}
 });
 
-function sendMail() {
+async function sendMail(nethz, discordUsername, token, guildName) {
+	const textContent = genMailContent(discordUsername, token, guildName);
+
 	// send mail with defined transport object
 	const info = await transporter.sendMail({
-		text: "Hello world?", // plain text body
-		html: "<b>Hello world?</b>" // html body
+		to: `${nethz}@student.ethz.ch`,
+		subject: `Verify your identity on Discord server ${guildName}`,
+		text: textContent,
+		html: converter.makeHtml(textContent.replace('\n', '\n\n'))
 	});
 
 	console.log("Message sent: %s", info.messageId);
