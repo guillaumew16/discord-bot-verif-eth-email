@@ -3,16 +3,13 @@ const config = require('./config.json');
 
 const client = new Discord.Client();
 
-let botName = client.user.username;
+const botName = client.user.username;
+const botMail = config.transportOptions.auth;
 
-client.once('ready', () => {
-	console.log('Ready!');
-});
+const sampleNethz = "jsmith";
+const sampleToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
 
-let sampleNethz = "jsmith";
-let sampleToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-
-let availableCommandsStr = `Available commands:
+const availableCommandsStr = `Available commands:
 	!ping: make me say Pong
 	!nethz: tell me your nethz; e.g \`!nethz ${sampleNethz}\`
 	!token: tell me the token I sent you; e.g \`!token ${sampleToken}\`
@@ -20,14 +17,14 @@ let availableCommandsStr = `Available commands:
 	!welcomeagain: print the welcome message again, with all the instructions for the verification process
 `;
 
-let welcomeMsg = `You are currently not verified as an ETH student, so you only have access to a restricted number of channels.
+const welcomeMsg = `You are currently not verified as an ETH student, so you only have access to a restricted number of channels.
 To verify yourself as an ETH student, 
 	1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; e.g \`nethz ${sampleNethz}\`
 	2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`${sampleToken}\`
 	3. then, show me that you did receive the token, by telling me: \`!token \` + the token; e.g \`token ${sampleToken}\`
 Remarks:
 	- To reset the process, e.g if you misspelled your nethz, just do step 1 again. (I will invalidate the previous token, don't worry.)
-	- My email address, which I will use in step 2, is ${config.botMail.auth.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${config.botMail.auth.user}.)
+	- My email address, which I will use in step 2, is ${botMail.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${botMail.user}.)
 	- Once you receive the email, you have 24 hours to accomplish step 3, as the token expires after that duration.
 	- I will not store your nethz in database at any point (I only use your discord username and ID).
 I am a very stupid bot. If you have any questions or encounter any problem, please send a message to an admin of this server directly.
@@ -44,7 +41,42 @@ If you really need to, you can always contact ${config.emergencyContact.fullName
 ${botName}
 `;
 
-let prefix = config.prefix;
+// create reusable transporter object using the default SMTP transport
+const mailDefaults = {
+	from: {
+		name: botName,
+		address: botMail.user
+	},
+	cc: botMail.user,
+	subject: `Verify your identity on Discord server ${guildName}`
+};
+const transporter = nodemailer.createTransport(config.transportOptions, mailDefaults);
+
+// verify connection configuration
+transporter.verify(function (error, success) {
+	if (error) {
+		console.log(error);
+	} else {
+		console.log("Server is ready to take our messages");
+	}
+});
+
+function sendMail() {
+	// send mail with defined transport object
+	const info = await transporter.sendMail({
+		text: "Hello world?", // plain text body
+		html: "<b>Hello world?</b>" // html body
+	});
+
+	console.log("Message sent: %s", info.messageId);
+	// Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+}
+
+client.once('ready', () => {
+	console.log('Ready!');
+});
+
+const prefix = config.prefix;
 
 client.on('message', message => {
 	if (message.channel.type !== 'dm') return;
@@ -65,7 +97,7 @@ client.on('message', message => {
 		} else if (args.length > 1) {
 			return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz ${sampleNethz}\``);
 		} else {
-			let nethz = args[0];
+			const nethz = args[0];
 			// TODO
 			throw Error("not yet implemented");
 		}
@@ -75,7 +107,7 @@ client.on('message', message => {
 		} else if (args.length > 1) {
 			return message.channel.send(`You provided too many arguments... Usage: e.g \`!token ${sampleToken}\``);
 		} else {
-			let token = args[0];
+			const token = args[0];
 			// TODO
 			throw Error("not yet implemented");
 		}
@@ -87,7 +119,7 @@ client.on('message', message => {
 });
 
 client.on('guildMemberAdd', member => {
-	let msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
+	const msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
 
 	member.user.dmChannel.send(msgToSend)
 		.then(message => console.log(`Sent message: ${message.content}`))

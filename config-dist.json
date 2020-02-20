@@ -1,11 +1,13 @@
 {
 	"prefix": "!",
 	"token": "your-token-goes-here",
-	"imap": {
-		"user": "dbvee-config-dist-example@gmail.com",
-		"password": "correcthorsebatterystaple",
-		"host": "imap.gmail.com",
-		"port": 1234567,
-		"tls": true
+	"transportOptions": {
+		"host": "smtp.ethereal.email",
+		"port": 587,
+		"secure": false,
+		"auth": {
+		  "user": "dbvee-config-dist-example@gmail.com",
+		  "pass": "correcthorsebatterystaple"
+		}
 	}
 }
