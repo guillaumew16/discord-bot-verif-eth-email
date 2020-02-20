@@ -6,27 +6,30 @@ const client = new Discord.Client();
 let botName = client.user.username;
 
 client.once('ready', () => {
-    console.log('Ready!');
+	console.log('Ready!');
 });
 
-const availableCommandsStr = `Available commands:
-    !ping: make me say Pong
-    !nethz: tell me your nethz; e.g \`!nethz jsmith\`
-    !token: tell me the token I sent you; e.g \`!token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\`
-    !help: print this message
-    !welcomeagain: print the welcome message again, with all the instructions for the verification process
+let sampleNethz = "jsmith";
+let sampleToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+
+let availableCommandsStr = `Available commands:
+	!ping: make me say Pong
+	!nethz: tell me your nethz; e.g \`!nethz ${sampleNethz}\`
+	!token: tell me the token I sent you; e.g \`!token ${sampleToken}\`
+	!help: print this message
+	!welcomeagain: print the welcome message again, with all the instructions for the verification process
 `;
 
-const welcomeMsg = `You are currently not verified as an ETH student, so you only have access to a restricted number of channels.
+let welcomeMsg = `You are currently not verified as an ETH student, so you only have access to a restricted number of channels.
 To verify yourself as an ETH student, 
-    1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; e.g \`nethz jsmith\`
-    2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\`
-    3. then, show me that you did receive the token, by telling me: \`!token \` + the token; e.g \`token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\`
+	1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; e.g \`nethz ${sampleNethz}\`
+	2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`${sampleToken}\`
+	3. then, show me that you did receive the token, by telling me: \`!token \` + the token; e.g \`token ${sampleToken}\`
 Remarks:
-    - To reset the process, e.g if you misspelled your nethz, just do step 1 again. (I will invalidate the previous token, don't worry.)
-    - My email address, which I will use in step 2, is ${config.botMail.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${config.botMail.user}.)
-    - Once you receive the email, you have 24 hours to accomplish step 3, as the token expires after that duration.
-    - I will not store your nethz in database at any point (I only use your discord username and ID).
+	- To reset the process, e.g if you misspelled your nethz, just do step 1 again. (I will invalidate the previous token, don't worry.)
+	- My email address, which I will use in step 2, is ${config.botMail.auth.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${config.botMail.auth.user}.)
+	- Once you receive the email, you have 24 hours to accomplish step 3, as the token expires after that duration.
+	- I will not store your nethz in database at any point (I only use your discord username and ID).
 I am a very stupid bot. If you have any questions or encounter any problem, please send a message to an admin of this server directly.
 `;
 
@@ -44,51 +47,51 @@ ${botName}
 let prefix = config.prefix;
 
 client.on('message', message => {
-    if (message.channel.type !== 'dm') return;
-    if (message.author.bot) return;
-    if (!message.content.startsWith(prefix)) {
-        return message.channel.send(availableCommandsStr);
-    }
+	if (message.channel.type !== 'dm') return;
+	if (message.author.bot) return;
+	if (!message.content.startsWith(prefix)) {
+		return message.channel.send(availableCommandsStr);
+	}
 
-    const args = message.content.slice(prefix.length).split(/ +/);
-    const command = args.shift().toLowerCase();
-    const user = message.author;
+	const args = message.content.slice(prefix.length).split(/ +/);
+	const command = args.shift().toLowerCase();
+	const user = message.author;
 
-    if (command === 'ping') {
+	if (command === 'ping') {
 		message.channel.send('Pong');
 	} else if (command === 'nethz') {
-        if (!args.length) {
-            return message.channel.send(`You didn't provide any nethz!`);
-        } else if (args.length > 1) {
-            return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz jsmith\``);
+		if (!args.length) {
+			return message.channel.send(`You didn't provide any nethz!`);
+		} else if (args.length > 1) {
+			return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz ${sampleNethz}\``);
 		} else {
-            let nethz = args[0];
-            // TODO
-            throw Error("not yet implemented");
+			let nethz = args[0];
+			// TODO
+			throw Error("not yet implemented");
 		}
 	} else if (command === 'token') {
-        if (!args.length) {
-            return message.channel.send(`You didn't provide any nethz!`);
-        } else if (args.length > 1) {
-            return message.channel.send(`You provided too many arguments... Usage: e.g \`!token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\``);
+		if (!args.length) {
+			return message.channel.send(`You didn't provide any nethz!`);
+		} else if (args.length > 1) {
+			return message.channel.send(`You provided too many arguments... Usage: e.g \`!token ${sampleToken}\``);
 		} else {
-            let token = args[0];
-            // TODO
-            throw Error("not yet implemented");
+			let token = args[0];
+			// TODO
+			throw Error("not yet implemented");
 		}
 	} else if (command === 'help') {
-        message.channel.send(availableCommandsStr);
-    } else {
-        message.reply(`command not understood: ${availableCommandsStr}. ${availableCommandsStr}`);
-    }
+		message.channel.send(availableCommandsStr);
+	} else {
+		message.reply(`command not understood: ${availableCommandsStr}. ${availableCommandsStr}`);
+	}
 });
 
 client.on('guildMemberAdd', member => {
-    let msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
+	let msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
 
-    member.user.dmChannel.send(msgToSend)
-        .then(message => console.log(`Sent message: ${message.content}`))
-        .catch(console.error);
+	member.user.dmChannel.send(msgToSend)
+		.then(message => console.log(`Sent message: ${message.content}`))
+		.catch(console.error);
 });
 
 client.login(config.token);
