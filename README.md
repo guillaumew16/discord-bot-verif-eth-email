@@ -21,3 +21,4 @@ The fields of the `config.json` file to be used is described by the sample file 
 - https://github.com/discordjs/guide/blob/master/code-samples/creating-your-bot/commands-with-user-input/11/index.js
 > Rk: that link is a strict subset of  https://github.com/discordjs/guide/blob/master/code-samples/command-handling/adding-features/11/index.js (which is the code sample for a later step of the same tutorial), but since we only need to respond to very few commands, that link is actually more relevant
 - https://discordjs.guide/popular-topics/common-questions.html#how-do-i-add-a-role-to-a-guild-member
+- https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-guildMemberAdd

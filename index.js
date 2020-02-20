@@ -3,86 +3,60 @@ const config = require('./config.json');
 const client = new Discord.Client();
 
 client.once('ready', () => {
-	console.log('Ready!');
+    console.log('Ready!');
 });
 
-availableCommandsStr = `Available commands:
-    ping: TODO
-    beep: TODO
-    server: TODO
-    user-info: TODO
-    help: print this message
+const availableCommandsStr = `Available commands:
+    !ping: make me say Pong
+    !help: print this message
+`;
+
+const welcomeMsg = `You are currently not verified as an ETH student, so you only have access to a restricted number of channels.
+To verify yourself as an ETH student, 
+    1. please tell me your nethz in the following format: \`!nethz \` + your nethz; e.g \`nethz jsmith\`
+    2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\`
+    3. then, show me that you did receive the token, by telling me: \`!token \` + the token; e.g \`token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\`
+Remarks:
+    - To reset the process, e.g if you misspelled your nethz, just do step 1 again. (I will invalidate the previous token, don't worry.)
+    - My email address, which I will use in step 2, is ${config.botmail.user}; please check in your spam folder if you don't receive anything.
+    - Note that no human will check the inbox of ${config.botmail.user}.
+    - I am a very stupid bot. If you encounter any problem or have any questions, please send a message to an admin of this server directly.
 `;
 
 let prefix = config.prefix;
 
 client.on('message', message => {
-	if (!message.content.startsWith(prefix) || message.author.bot) return;
+    if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-	const args = message.content.slice(prefix.length).split(/ +/);
-	const command = args.shift().toLowerCase();
-    const user = message.author.user;
+    const args = message.content.slice(prefix.length).split(/ +/);
+    const command = args.shift().toLowerCase();
+    const user = message.author;
 
-	if (command === 'ping') {
+    if (command === 'ping') {
 		message.channel.send('Pong.');
-	} else if (command === 'beep') {
-		message.channel.send('You said beep.');
-        
-
-
-
-
-
-
-
-
-
-	} else if (command === 'server') {
-		message.channel.send(`Server name: ${message.guild.name}\nTotal members: ${message.guild.memberCount}`);
-	} else if (command === 'user-info') {
-		message.channel.send(`Your username: ${message.author.username}\nYour ID: ${message.author.id}`);
-	} else if (command === 'info') {
-		if (!args.length) {
-			return message.channel.send(`You didn't provide any arguments, ${message.author}!`);
-		} else if (args[0] === 'foo') {
-			return message.channel.send('bar');
-		}
-
-		message.channel.send(`First argument: ${args[0]}`);
-	} else if (command === 'kick') {
-		if (!message.mentions.users.size) {
-			return message.reply('you need to tag a user in order to kick them!');
-		}
-
-		const taggedUser = message.mentions.users.first();
-
-		message.channel.send(`You wanted to kick: ${taggedUser.username}`);
 	} else if (command === 'avatar') {
-		if (!message.mentions.users.size) {
-			return message.channel.send(`Your avatar: <${message.author.displayAvatarURL}>`);
-		}
+        if (!message.mentions.users.size) {
+            return message.channel.send(`Your avatar: <${message.author.displayAvatarURL}>`);
+        }
 
-		const avatarList = message.mentions.users.map(user => {
-			return `${user.username}'s avatar: <${user.displayAvatarURL}>`;
-		});
+        const avatarList = message.mentions.users.map(user => {
+            return `${user.username}'s avatar: <${user.displayAvatarURL}>`;
+        });
 
-		message.channel.send(avatarList);
-	} else if (command === 'prune') {
-		const amount = parseInt(args[0]) + 1;
-
-		if (isNaN(amount)) {
-			return message.reply('that doesn\'t seem to be a valid number.');
-		} else if (amount <= 1 || amount > 100) {
-			return message.reply('you need to input a number between 1 and 99.');
-		}
-
-		message.channel.bulkDelete(amount, true).catch(err => {
-			console.error(err);
-			message.channel.send('there was an error trying to prune messages in this channel!');
-		});
-	} else {
+        message.channel.send(avatarList);
+	} else if (command === 'help') {
+        message.channel.send(availableCommandsStr)
+    } else {
         return message.reply('command not understood :(\n' + availableCommandsStr);
     }
+});
+
+client.on('guildMemberAdd', member => {
+    let msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
+
+    member.user.dmChannel.send(msgToSend)
+        .then(message => console.log(`Sent message: ${message.content}`))
+        .catch(console.error);
 });
 
 client.login(config.token);
