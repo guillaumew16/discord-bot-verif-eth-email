@@ -9,5 +9,6 @@
 		  "user": "dbvee-config-dist-example@gmail.com",
 		  "pass": "correcthorsebatterystaple"
 		}
-	}
+	},
+	"theGuildId": 123456789123456789
 }

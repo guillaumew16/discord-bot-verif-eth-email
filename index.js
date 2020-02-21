@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const config = require('./config.json');
 const nodemailer = require("nodemailer");
 const showdown  = require('showdown');
+const randtoken = require('rand-token');
 
 const client = new Discord.Client();
 const converter = new showdown.Converter();
@@ -59,6 +60,7 @@ transporter.verify(function (error, success) {
 	if (error) {
 		console.log(error);
 	} else {
+		console.assert(success);
 		console.log("Server is ready to take our messages");
 	}
 });
@@ -104,7 +106,10 @@ client.on('message', message => {
 			return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz ${sampleNethz}\``);
 		} else {
 			const nethz = args[0];
-			// TODO
+			const newToken = randtoken.uid(16);
+			// TODO: save newToken somewhere, along with user.username and user.id and guildname
+			
+
 			throw Error("not yet implemented");
 		}
 	} else if (command === 'token') {
@@ -114,8 +119,16 @@ client.on('message', message => {
 			return message.channel.send(`You provided too many arguments... Usage: e.g \`!token ${sampleToken}\``);
 		} else {
 			const token = args[0];
-			// TODO
-			throw Error("not yet implemented");
+			const trueToken = "asdfjkl"; // TODO: recover the true token associated with user.username and user.id and guildname
+			if (token === trueToken) {
+				// throw Error("not yet implemented");
+				const role = <guild>.roles.find(role => role.name === '<role name>');
+				const member = <message>.mentions.members.first();
+				member.addRole(role);
+
+			} else {
+				throw Error("not yet implemented");
+			}
 		}
 	} else if (command === 'help') {
 		message.channel.send(availableCommandsStr);
