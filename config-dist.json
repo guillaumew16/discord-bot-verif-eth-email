@@ -10,5 +10,6 @@
 		  "pass": "correcthorsebatterystaple"
 		}
 	},
-	"theGuildId": 123456789123456789
+	"theGuildId": 123456789123456789,
+	"roleName": "ETH student"
 }
