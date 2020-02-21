@@ -16,6 +16,7 @@ The fields of the `config.json` file to be used is described by the sample file 
 - The `transportOptions` field is passed directly to nodemailer.createTransport, which is documented here: https://nodemailer.com/smtp/
 - The `theGuildId` field holds the ID of the (unique) discord server that should be using this bot. (Yes we support only serving one server, since that is exactly our goal.)
 - The `tokenTTL` field is in hours
+- The `commonSalt` field is used to "salt" the nethz before hashing them (otherwise we risk dictionary attack, since nethz's are short). Note that we use a common salt for all nethz's, contrary to what is usually meant by "salting" (typically for passwords), since we don't have keys (typically username), just the hashed values.
 
 ## Notes for devs
 (This is, and will remain, a really small project, so we dump here whatever would normally be in a CONTRIBUTING file)

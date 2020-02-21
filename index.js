@@ -4,12 +4,33 @@ const nodemailer = require("nodemailer");
 const showdown = require('showdown');
 const randtoken = require('rand-token');
 const Keyv = require('keyv');
+const crypto = require('crypto');
+
+/**
+ * hash password with sha512.
+ * source: https://ciphertrick.com/salt-hash-passwords-using-nodejs-crypto/
+ * @function
+ * @param {string} toHash - List of required fields.
+ * @param {string} salt - Data to be validated.
+ */
+const sha512 = function(toHash, salt){
+	var hash = crypto.createHmac('sha512', salt); /** Hashing algorithm sha512 */
+	hash.update(toHash);
+	return value = hash.digest('hex');
+};
+
+const HOURS_TO_MILLISECONDS = 3600 * 1000;
 
 const client = new Discord.Client();
 const converter = new showdown.Converter();
-const keyv = new Keyv(); // for in-memory storage
-keyv.on('error', err => console.error('Keyv connection error:', err));
-const HOURS_TO_MILLISECONDS = 3600 * 1000;
+const discordUserId2token = new Keyv(); // for in-memory storage of Discord User-ID / token pairs
+const token2nethzHash = new Keyv({ namespace: "token_to_nethz_hashs" }); // the nethz / token pairs
+const verifiedNethzHashs = new Keyv({ namespace: "verified_nethz_hashs" }); // the set of hashs of nethzs already used for verification
+discordUserId2token.on('error', err => console.error('Keyv connection error:', err));
+token2nethzHash.on('error', err => console.error('Keyv connection error:', err));
+verifiedNethzHashs.on('error', err => console.error('Keyv connection error:', err));
+
+client.login(config.token);
 
 const theGuild = client.guilds.get(config.theGuildId);
 const botName = client.user.username;
@@ -108,17 +129,23 @@ client.on('message', async message => {
 			return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
 		} else {
 			const nethz = args[0].toLowerCase();
-			const newToken = randtoken.uid(16);
-			// save newToken, along with user.username and user.id, and set expiration time
-			await keyv.set(user.id, newToken, config.tokenTTL * HOURS_TO_MILLISECONDS);
-			const textContent = genMailContent(user.username, newToken);
-			// send mail with defined transport object
-			const info = await transporter.sendMail({
-				to: `${nethz}@student.ethz.ch`,
-				text: textContent,
-				html: converter.makeHtml(textContent.replace('\n', '\n\n'))
-			});
-			console.log("Message sent: %s", info.messageId);
+			const nethzHash = sha512(nethz, config.commonSalt);
+			if (await verifiedNethzHashs.get(nethzHash)) {
+				return message.channel.send(`This nethz was already used to verify a different Discord user. If you did not do it, your nethz and/or ETH mail inbox may have been used by another person! Then, please contact an administrator of ${theGuild.name}.`);
+			} else {
+				const newToken = randtoken.uid(16);
+				// save newToken, along with user.username and user.id, and set expiration time
+				await discordUserId2token.set(user.id, newToken, config.tokenTTL * HOURS_TO_MILLISECONDS);
+				await token2nethzHash.set(newToken, nethzHash, config.tokenTTL * HOURS_TO_MILLISECONDS);
+				const textContent = genMailContent(user.username, newToken);
+				// send mail with defined transport object
+				const info = await transporter.sendMail({
+					to: `${nethz}@student.ethz.ch`,
+					text: textContent,
+					html: converter.makeHtml(textContent.replace('\n', '\n\n'))
+				});
+				console.log("Message sent: %s", info.messageId);
+			}
 		}
 	} else if (command === 'token') {
 		if (!args.length) {
@@ -129,11 +156,15 @@ client.on('message', async message => {
 			return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
 		} else {
 			const token = args[0];
-			const trueToken = await keyv.get(user.id); // recover the true token associated with user.username and user.id
+			const trueToken = await discordUserId2token.get(user.id);
 			if (token === trueToken) {
 				const role = theGuild.roles.find(role => role.name === config.roleName);
 				user.addRole(role);
-				await keyv.delete(user.id); // forget the token
+				const nethzHash = await token2nethzHash.get(token); // store a hash  of this nethz to prevent this student from verifying multiple Discord users
+				console.assert(!verifiedNethzHashs.get(nethzHash));
+				await verifiedNethzHashs.set(nethzHash, true);
+				await discordUserId2token.delete(user.id); // forget the token
+				await token2nethzHash.delete(token);
 				// TODO: maybe optionally send a greetings message in the #welcome channel
 			} else {
 				return message.channel.send(`This is not the right token.`);
@@ -153,5 +184,3 @@ client.on('guildMemberAdd', member => {
 		.then(message => console.log(`Sent message: ${message.content}`))
 		.catch(console.error);
 });
-
-client.login(config.token);

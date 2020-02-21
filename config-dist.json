@@ -16,5 +16,6 @@
 	},
 	"theGuildId": 123456789123456789,
 	"roleName": "ETH student",
-	"tokenTTL": 12
+	"tokenTTL": 12,
+	"commonSalt": "8P0H0r4Y7RtaAHKB"
 }
