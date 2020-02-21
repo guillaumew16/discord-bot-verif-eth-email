@@ -121,6 +121,7 @@ client.on('message', async message => {
 				const role = theGuild.roles.find(role => role.name === config.roleName);
 				user.addRole(role);
 				// TODO: forget the token
+				// TODO: maybe optionally send a greetings message in the #welcome channel
 			} else {
 				return message.channel.send(`This is not the right token.`);
 			}

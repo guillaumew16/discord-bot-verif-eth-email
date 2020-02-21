@@ -13,6 +13,11 @@ The fields of the `config.json` file to be used is described by the sample file 
 ## Notes for devs
 (This is, and will remain, a really small project, so we dump here whatever would normally be in a CONTRIBUTING file)
 
+### TODO
+- test
+- debug
+- (optional) handle "The email address you entered couldn't be found" emails with https://nodemailer.com/smtp/dsn/ and https://www.npmjs.com/package/imap
+
 ### Useful links
 - https://nodemailer.com/about/
 - https://nodemailer.com/usage/using-gmail/
