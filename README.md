@@ -3,7 +3,13 @@ Discord bot for ETH student "verification"
 
 ## Description
 A discord bot to "verify" that a user joining the server is indeed an ETH student, by the following process:
-- TODO
+1. user tells bot their nethz
+2. bot sends an email to that nethz (domain "student") with a token
+3. user reports token to bot, thus proving it has access to nethz inbox
+Remarks:
+- the token has an expiration date
+- the bot must have an outgoing email address not blacklisted by ETH's mail server
+- nethz is never stored in database (only Discord User-ID)
 
 ## Config
 The fields of the `config.json` file to be used is described by the sample file `config-dist.json`

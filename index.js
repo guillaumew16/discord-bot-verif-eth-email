@@ -121,11 +121,11 @@ client.on('message', async message => {
 			return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
 		} else {
 			const token = args[0];
-			const trueToken = keyv.get(user.id); // recover the true token associated with user.username and user.id
+			const trueToken = await keyv.get(user.id); // recover the true token associated with user.username and user.id
 			if (token === trueToken) {
 				const role = theGuild.roles.find(role => role.name === config.roleName);
 				user.addRole(role);
-				keyv.delete(user.id); // forget the token
+				await keyv.delete(user.id); // forget the token
 				// TODO: maybe optionally send a greetings message in the #welcome channel
 			} else {
 				return message.channel.send(`This is not the right token.`);
