@@ -37,12 +37,13 @@ const botMail = config.transportOptions.auth;
 
 const sampleNethz = "jsmith";
 const sampleToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+const sampleDiscordUsername = "john_sm_01";
 
 const availableCommandsStr = `Available commands:
 	\`!ping\`: make me say Pong
 	\`!nethz\`: tell me your nethz; e.g \`!nethz ${sampleNethz}\`
 	\`!token\`: tell me the token I sent you; e.g \`!token ${sampleToken}\`
-	\`!welcomeagain\`: print the welcome message again, with all the instructions for the verification process
+	\`!welcomeagain\`: **print the welcome message again, with all the instructions for the verification process**
 	\`!help\`: print this message
 `;
 
@@ -50,6 +51,7 @@ const adminCommandsStr = `Admin-only commands:
 	\`!unmark\` (admin only): unmark a nethz as "already used for verification"; e.g \`!unmark ${sampleNethz}\`
 	\`!purgereqs\` (admin only): delete all active tokens, by clearing discordUserId2token and token2nethzHash
 	\`!purgemarks\` (admin only): unmark all nethzs, by clearing verifiedNethzHashs. WARNING: doing this is rarely a good idea...
+	\`!verify\` (admin only): manually verify a user; e.g \`!verify @${sampleDiscordUsername}\`
 	\`!adminhelp\` (admin only): print this message
 (Note: admin commands are only used in the admin channel #${config.adminChannelName}, whereas normal commands are only used in DM channels.)
 `;
@@ -164,6 +166,15 @@ client.on('message', async message => {
 			}
 			await verifiedNethzHashs.clear();
 			return message.channel.send(`Unmarked all previously marked nethzs as "already used for verification".`);
+		} else if (command === 'verify') {
+			if (!args.length) {
+				return message.channel.send(`You didn't provide any (Discord) user to verify! Usage: e.g \`!verify ${sampleDiscordUsername}\``);
+			} else if (args.length > 1) {
+				return message.channel.send(`You provided too many arguments... Usage: e.g \`!verify ${sampleDiscordUsername}\``);
+			} else {
+				return message.channel.send(`\`!verify\` is not yet implemented. No action was performed.`);
+				// TODO: do the thing
+			}
 		} else if (command === 'adminhelp') {
 			return message.channel.send(adminCommandsStr);
 		} else {
