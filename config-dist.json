@@ -6,7 +6,7 @@
 		"port": 587,
 		"secure": false,
 		"auth": {
-		  "user": "dbvee-config-dist-example@gmail.com",
+		  "user": "verif-eth-email-config-dist-example@gmail.com",
 		  "pass": "correcthorsebatterystaple"
 		}
 	},
