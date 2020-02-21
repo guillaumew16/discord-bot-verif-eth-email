@@ -11,5 +11,6 @@
 		}
 	},
 	"theGuildId": 123456789123456789,
-	"roleName": "ETH student"
+	"roleName": "ETH student",
+	"tokenLifetime": 12
 }
