@@ -10,6 +10,10 @@
 		  "pass": "correcthorsebatterystaple"
 		}
 	},
+	"emergencyContact": {
+		"fullName": "Jean Dupont",
+		"neth": "jdupont"
+	},
 	"theGuildId": 123456789123456789,
 	"roleName": "ETH student",
 	"tokenTTL": 12

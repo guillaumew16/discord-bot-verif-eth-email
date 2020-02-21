@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const config = require('./config.json');
 const nodemailer = require("nodemailer");
-const showdown  = require('showdown');
+const showdown = require('showdown');
 const randtoken = require('rand-token');
 const Keyv = require('keyv');
 
@@ -9,7 +9,7 @@ const client = new Discord.Client();
 const converter = new showdown.Converter();
 const keyv = new Keyv(); // for in-memory storage
 keyv.on('error', err => console.error('Keyv connection error:', err));
-const HOURS_TO_MILLISECONDS = 3600*1000;
+const HOURS_TO_MILLISECONDS = 3600 * 1000;
 
 const theGuild = client.guilds.get(config.theGuildId);
 const botName = client.user.username;
@@ -72,6 +72,14 @@ transporter.verify(function (error, success) {
 });
 
 client.once('ready', () => {
+	// create role config.roleName if does not exist
+	if (!theGuild.roles.some(role => role.name === config.roleName)) {
+		theGuild.createRole({
+			name: config.roleName
+		})
+			.then(role => console.log(`Created new role with name ${role.name} and color ${role.color}`))
+			.catch(console.error);
+	}
 	console.log('Ready!');
 });
 
@@ -87,7 +95,7 @@ client.on('message', async message => {
 	const args = message.content.slice(prefix.length).split(/ +/);
 	const command = args.shift().toLowerCase();
 	const user = message.author; // user (: User) and member (: GuildMember) refer to the same person, but member holds information about the relation to the guild
-	const member = theGuild.members.get(user.id); 
+	const member = theGuild.members.get(user.id);
 
 	if (command === 'ping') {
 		message.channel.send('Pong');
@@ -99,10 +107,10 @@ client.on('message', async message => {
 		} else if (member.roles.some(role => role.name === config.roleName)) {
 			return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
 		} else {
-			const nethz = args[0];
+			const nethz = args[0].toLowerCase();
 			const newToken = randtoken.uid(16);
 			// save newToken, along with user.username and user.id, and set expiration time
-			await keyv.set(user.id, newToken, config.tokenTTL*HOURS_TO_MILLISECONDS);
+			await keyv.set(user.id, newToken, config.tokenTTL * HOURS_TO_MILLISECONDS);
 			const textContent = genMailContent(user.username, newToken);
 			// send mail with defined transport object
 			const info = await transporter.sendMail({
