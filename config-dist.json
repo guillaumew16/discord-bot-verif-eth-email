@@ -2,7 +2,7 @@
 	"prefix": "!",
 	"token": "your-token-goes-here",
 	"transportOptions": {
-		"host": "smtp.ethereal.email",
+		"host": "smtp.gmail.email",
 		"port": 587,
 		"secure": false,
 		"auth": {

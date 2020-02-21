@@ -19,6 +19,17 @@ const sha512 = function (toHash, salt) {
 	return hash.digest('hex');
 };
 
+// source: https://discordjs.guide/miscellaneous/parsing-mention-arguments.html#using-regular-expressions
+function getUserFromMention(mention) {
+	// The id is the first and only match found by the RegEx.
+	const matches = mention.match(/^<@!?(\d+)>$/);
+	// If supplied variable was not a mention, matches will be null instead of an array.
+	if (!matches) return;
+	// However the first element in the matches array will be the entire mention, not just the ID, so use index 1.
+	const id = matches[1];
+	return client.users.get(id);
+}
+
 const HOURS_TO_MILLISECONDS = 3600 * 1000;
 
 const client = new Discord.Client();
@@ -133,9 +144,7 @@ const prefix = config.prefix;
 client.on('message', async message => {
 	if (message.author.bot) return;
 	if (message.channel.type === 'text' && message.channel.guild.id === config.theGuildId && message.channel.name === config.adminChannelName) {
-		if (!message.content.startsWith(prefix)) {
-			return message.channel.send(`I am a very stupid bot, I only respond to commands. ${adminCommandsStr}`);
-		}
+		if (!message.content.startsWith(prefix)) return;
 		const args = message.content.slice(prefix.length).split(/ +/);
 		const command = args.shift().toLowerCase();
 		if (command === 'unmark') {
@@ -172,8 +181,18 @@ client.on('message', async message => {
 			} else if (args.length > 1) {
 				return message.channel.send(`You provided too many arguments... Usage: e.g \`!verify ${sampleDiscordUsername}\``);
 			} else {
-				return message.channel.send(`\`!verify\` is not yet implemented. No action was performed.`);
-				// TODO: do the thing
+				const user = getUserFromMention(args[0]);
+				if (!user) {
+					return message.channel.send("Please use a proper mention!");
+				}
+				const theGuild = client.guilds.get(config.theGuildId);
+				const member = theGuild.members.get(user.id);
+				if (member.roles.some(role => role.name === config.roleName)) {
+					return message.channel.send(`That user already has the "${config.roleName}" role!`);
+				}
+				const role = theGuild.roles.find(role => role.name === config.roleName);
+				member.addRole(role);
+				return message.channel.send(`<@${user.id}> now has the "${config.roleName}" role, and has access to the student-only channels.`);
 			}
 		} else if (command === 'adminhelp') {
 			return message.channel.send(adminCommandsStr);
