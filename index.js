@@ -26,7 +26,7 @@ const converter = new showdown.Converter();
 // use Keyv with in-memory storage
 const discordUserId2token = new Keyv({ namespace: "discord_user_id_to_token"}); // Discord User-ID / token pairs
 const token2nethzHash = new Keyv({ namespace: "token_to_nethz_hash" }); // nethz / token pairs
-const verifiedNethzHashs = new Keyv({ namespace: "verified_nethz_hashs" }); // the set of hashs of nethzs already used for verification
+const verifiedNethzHashs = new Keyv({ namespace: "verified_nethz_hashs" }); // the set of hashs of nethzs already used for verification (only the keys are relevant; value is always `true`)
 discordUserId2token.on('error', err => console.error('Keyv connection error:', err));
 token2nethzHash.on('error', err => console.error('Keyv connection error:', err));
 verifiedNethzHashs.on('error', err => console.error('Keyv connection error:', err));
@@ -44,11 +44,20 @@ const availableCommandsStr = `Available commands:
 	!ping: make me say Pong
 	!nethz: tell me your nethz; e.g \`!nethz ${sampleNethz}\`
 	!token: tell me the token I sent you; e.g \`!token ${sampleToken}\`
-	!help: print this message
 	!welcomeagain: print the welcome message again, with all the instructions for the verification process
+	!help: print this message
 `;
 
-const welcomeMsg = `You are currently not verified as an ETH student on ${theGuild.name}, so you only have access to a restricted number of channels.
+const adminCommandsStr = `Admin-only commands:
+!unmark (admin only): unmark a nethz as "already used for verification"; e.g \`!unmark ${sampleNethz}\`
+!purgereqs (admin only): delete all active tokens, by clearing discordUserId2token and token2nethzHash
+!purgemarks (admin only): unmark all nethzs, by clearing verifiedNethzHashs. WARNING: doing this is rarely a good idea...
+!adminhelp (admin only): print this message
+(Note: admin commands are only used in the admin channel #${config.adminChannelName}, whereas normal commands are only used in DM channels.)
+`;
+
+const welcomeMsg = `Hello! I see you just joined the server ${theGuild.name}.
+You are currently not verified as an ETH student on ${theGuild.name}, so you only have access to a restricted number of channels.
 To verify yourself as an ETH student, 
 	1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; e.g \`nethz ${sampleNethz}\`
 	2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`${sampleToken}\`
@@ -108,82 +117,127 @@ client.once('ready', () => {
 const prefix = config.prefix;
 
 client.on('message', async message => {
-	if (message.channel.type !== 'dm') return;
 	if (message.author.bot) return;
-	if (!message.content.startsWith(prefix)) {
-		return message.channel.send(availableCommandsStr);
-	}
-
-	const args = message.content.slice(prefix.length).split(/ +/);
-	const command = args.shift().toLowerCase();
-	const user = message.author; // user (: User) and member (: GuildMember) refer to the same person, but member holds information about the relation to the guild
-	const member = theGuild.members.get(user.id);
-
-	if (command === 'ping') {
-		message.channel.send('Pong');
-	} else if (command === 'nethz') {
-		if (!args.length) {
-			return message.channel.send(`You didn't provide any nethz! Usage: e.g \`!nethz ${sampleNethz}\``);
-		} else if (args.length > 1) {
-			return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz ${sampleNethz}\``);
-		} else if (member.roles.some(role => role.name === config.roleName)) {
-			return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
-		} else {
-			const nethz = args[0].toLowerCase();
-			const nethzHash = sha512(nethz, config.commonSalt);
-			if (await verifiedNethzHashs.get(nethzHash)) {
-				return message.channel.send(`This nethz was already used to verify a different Discord user. 
-				If you did not do it, your nethz and/or ETH mail inbox may have been used by another person! Then, please contact an administrator of ${theGuild.name}.`);
-			} else {
-				const newToken = randtoken.uid(16);
-				// save newToken, along with user.username and user.id, and set expiration time
-				await discordUserId2token.set(user.id, newToken, config.tokenTTL * HOURS_TO_MILLISECONDS);
-				await token2nethzHash.set(newToken, nethzHash, config.tokenTTL * HOURS_TO_MILLISECONDS);
-				const textContent = genMailContent(user.username, newToken);
-				// send mail with defined transport object
-				const info = await transporter.sendMail({
-					to: `${nethz}@student.ethz.ch`,
-					text: textContent,
-					html: converter.makeHtml(textContent.replace('\n', '\n\n'))
-				});
-				console.log("Message sent: %s", info.messageId);
-			}
+	if (message.channel.type === 'text' && message.channel.name === config.adminChannelName) {
+		if (!message.content.startsWith(prefix)) {
+			return message.channel.send(`I am a very stupid bot, I only respond to commands. ${adminCommandsStr}`);
 		}
-	} else if (command === 'token') {
-		if (!args.length) {
-			return message.channel.send(`You didn't write any token! Usage: e.g \`!token ${sampleToken}\``);
-		} else if (args.length > 1) {
-			return message.channel.send(`You provided too many arguments... Usage: e.g \`!token ${sampleToken}\``);
-		} else if (member.roles.some(role => role.name === config.roleName)) {
-			return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
-		} else {
-			const token = args[0];
-			const trueToken = await discordUserId2token.get(user.id);
-			if (token === trueToken) {
-				const role = theGuild.roles.find(role => role.name === config.roleName);
-				user.addRole(role);
-				const nethzHash = await token2nethzHash.get(token); // store a hash  of this nethz to prevent this student from verifying multiple Discord users
-				console.assert(!verifiedNethzHashs.get(nethzHash));
-				await verifiedNethzHashs.set(nethzHash, true);
-				await discordUserId2token.delete(user.id); // forget the token
-				await token2nethzHash.delete(token);
-				// TODO: maybe optionally send a greetings message in the #welcome channel
+		const args = message.content.slice(prefix.length).split(/ +/);
+		const command = args.shift().toLowerCase();
+		if (command === 'unmark') {
+			if (!args.length) {
+				return message.channel.send(`You didn't provide any nethz! Usage: e.g \`!unmark ${sampleNethz}\``);
+			} else if (args.length > 1) {
+				return message.channel.send(`You provided too many arguments... Usage: e.g \`!unmark ${sampleNethz}\``);
 			} else {
-				return message.channel.send(`This is not the right token.`);
+				const nethz = args[0].toLowerCase();
+				const nethzHash = sha512(nethz, config.commonSalt);
+				if (! await verifiedNethzHashs.get(nethzHash)) {
+					return message.channel.send(`This nethz ${nethz} is not currently marked as "already used for verification". No action was performed.`);
+				} else {
+					verifiedNethzHashs.delete(nethzHash);
+					return message.channel.send(`Unmarked nethz ${nethz} as "already used for verification".`);
+				}
 			}
+		} else if (command === 'purgereqs') {
+			if (args.length) {
+				message.channel.send(`Warning: !${command} normally does not take any arguments. Arguments were ignored.`);
+			}
+			discordUserId2token.clear();
+			token2nethzHash.clear();
+			return message.channel.send(`Cleared all active verification tokens from database. Tip: this leads to unexpected behaviour from the point of view of the users; it might be a good idea to put a message on a public channel to explain what happened.`);
+		} else if (command === 'purgemarks') {
+			if (args.length) {
+				message.channel.send(`Warning: !${command} normally does not take any arguments. Arguments were ignored.`);
+			}
+			verifiedNethzHashs.clear();
+			return message.channel.send(`Unmarked all previously marked nethzs as "already used for verification".`);
+		} else if (command === 'adminhelp') {
+			return message.channel.send(adminCommandsStr);
+		} else {
+			return message.reply(`admin-command not understood: ${command}. ${adminCommandsStr}`);
 		}
-	} else if (command === 'help') {
-		message.channel.send(availableCommandsStr);
-	} else {
-		message.reply(`command not understood: ${availableCommandsStr}. ${availableCommandsStr}`);
+
+	} else if (message.channel.type === 'dm') {
+		if (!message.content.startsWith(prefix)) {
+			return message.channel.send(`I am a very stupid bot, I only respond to commands. ${availableCommandsStr}`);
+		}
+		const args = message.content.slice(prefix.length).split(/ +/);
+		const command = args.shift().toLowerCase();
+		const user = message.author; // user (: User) and member (: GuildMember) refer to the same person (`member.user` is `user`), but member holds information about the relation to the guild
+		const member = theGuild.members.get(user.id);
+
+		if (command === 'ping') {
+			return message.channel.send('Pong');
+		} else if (command === 'nethz') {
+			if (!args.length) {
+				return message.channel.send(`You didn't provide any nethz! Usage: e.g \`!nethz ${sampleNethz}\``);
+			} else if (args.length > 1) {
+				return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz ${sampleNethz}\``);
+			} else if (member.roles.some(role => role.name === config.roleName)) {
+				return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
+			} else {
+				const nethz = args[0].toLowerCase();
+				const nethzHash = sha512(nethz, config.commonSalt);
+				if (await verifiedNethzHashs.get(nethzHash)) {
+					return message.channel.send(`This nethz was already used to verify a different Discord user. If you did not do it, your nethz and/or ETH mail inbox may have been used by another person! (Or maybe you left the server and joined again.) Either way, please contact an administrator of ${theGuild.name}.`);
+				} else {
+					if (await discordUserId2token.get(user.id)) {
+						// invalidate the previous token
+						const prevToken = await discordUserId2token.get(user.id);
+						await token2nethzHash.delete(prevToken);
+						await discordUserId2token.delete(user.id);
+					}
+					const newToken = randtoken.uid(16);
+					// save newToken, along with user.username and user.id, and set expiration time
+					await discordUserId2token.set(user.id, newToken, config.tokenTTL * HOURS_TO_MILLISECONDS);
+					await token2nethzHash.set(newToken, nethzHash, config.tokenTTL * HOURS_TO_MILLISECONDS);
+					const textContent = genMailContent(user.username, newToken);
+					// send mail with defined transport object
+					const info = await transporter.sendMail({
+						to: `${nethz}@student.ethz.ch`,
+						text: textContent,
+						html: converter.makeHtml(textContent.replace('\n', '\n\n'))
+					});
+					console.log("Message sent: %s", info.messageId);
+				}
+			}
+		} else if (command === 'token') {
+			if (!args.length) {
+				return message.channel.send(`You didn't write any token! Usage: e.g \`!token ${sampleToken}\``);
+			} else if (args.length > 1) {
+				return message.channel.send(`You provided too many arguments... Usage: e.g \`!token ${sampleToken}\``);
+			} else if (member.roles.some(role => role.name === config.roleName)) {
+				return message.channel.send(`You are already verified as an ETH student on the Discord server ${theGuild.name}!`);
+			} else {
+				const token = args[0];
+				const trueToken = await discordUserId2token.get(user.id);
+				if (token === trueToken) {
+					const role = theGuild.roles.find(role => role.name === config.roleName);
+					user.addRole(role);
+					const nethzHash = await token2nethzHash.get(token); // store a hash  of this nethz to prevent this student from verifying multiple Discord users
+					console.assert(!verifiedNethzHashs.get(nethzHash));
+					await verifiedNethzHashs.set(nethzHash, true);
+					await discordUserId2token.delete(user.id); // forget the token
+					await token2nethzHash.delete(token);
+					// TODO: maybe optionally send a greetings message in the #welcome channel
+				} else {
+					return message.channel.send(`This is not the right token.`);
+				}
+			}
+		} else if (command === 'welcomeagain') {
+			return message.channel.send(`Please find the welcome message again, with all the instructions for the verification process, below: \n\n${welcomeMsg}`);
+		} else if (command === 'help') {
+			return message.channel.send(availableCommandsStr);
+		} else {
+			return message.reply(`command not understood: ${command}. ${availableCommandsStr}`);
+		}
 	}
 });
 
 client.on('guildMemberAdd', member => {
 	if (member.guild.id === config.theGuildId) {
-		const msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
-
-		member.user.dmChannel.send(msgToSend)
+		member.user.dmChannel.send(welcomeMsg)
 			.then(message => console.log(`Sent message: ${message.content}`))
 			.catch(console.error);
 	}
@@ -192,20 +246,15 @@ client.on('guildMemberAdd', member => {
 client.on('guildMemberRemove', async member => {
 	const discordUserId = member.user.id;
 	const token = await discordUserId2token.get(discordUserId); // may be `undefined` if no such key
-	const nethzHash = await token2nethzHash.get(token); // TODO: does calling .get with an undefined parameter work as expected, i.e return undefined?
 	if (member.roles.some(role => role.name === config.roleName)) {
 		// if this user was already verified
 		console.assert(token === undefined);
-		console.assert(nethzHash === undefined);
-		member.user.dmChannel.send(`Hello again! I see you just left the server ${member.guild.name}, and were verified as an ETH student using your ETH mail. 
+		member.user.dmChannel.send(`Hello again! I see you just left the server ${member.guild.name}, on which you were verified as an ETH student using your ETH mail. 
 		Please note that your nethz is still marked as "already used for verification". This is because I cannot tell what your nethz is from your Discord account.
 		If you wish to join ${member.guild.name} again and verify yourself as an ETH student again, please contact one of ${member.guild.name}'s admins, so that they can unmark your nethz as "already used" manually.`);
-	} else if (nethzHash) {
+	} else if (token) {
 		// if this user was pending verification, reset the verif process for her
 		await discordUserId2token.delete(member.user.id);
 		await token2nethzHash.delete(token);
-		await verifiedNethzHashs.delete(nethzHash);
-	} else {
-
 	}
 });
