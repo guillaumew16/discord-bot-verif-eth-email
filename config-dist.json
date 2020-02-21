@@ -6,8 +6,8 @@
 		"port": 587,
 		"secure": false,
 		"auth": {
-		  "user": "verif-eth-email-config-dist-example@gmail.com",
-		  "pass": "correcthorsebatterystaple"
+			"user": "verif-eth-email-config-dist-example@gmail.com",
+			"pass": "correcthorsebatterystaple"
 		}
 	},
 	"emergencyContact": {

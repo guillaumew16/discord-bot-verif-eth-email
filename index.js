@@ -103,6 +103,15 @@ transporter.verify(function (error, success) {
 });
 
 client.once('ready', () => {
+	if (!theGuild.available) {
+		console.warn("theGuild.available is false (it indicates a server outage)");
+	}
+	// check that the bot can read/write in the config.adminChannelName channel
+	const adminChannel = theGuild.channels.find(channel => channel.name === config.adminChannelName);
+	const readWritePerms = ['VIEW_CHANNEL', 'SEND_MESSAGES'];
+	if (!theGuild.me.permissionsIn(adminChannel).has(readWritePerms)) {
+		throw Error(`bot doesn't have read/write permission in admin channel ${config.adminChannelName}`);
+	}
 	// create role config.roleName if does not exist
 	if (!theGuild.roles.some(role => role.name === config.roleName)) {
 		theGuild.createRole({
@@ -237,7 +246,8 @@ client.on('message', async message => {
 
 client.on('guildMemberAdd', member => {
 	if (member.guild.id === config.theGuildId) {
-		member.user.dmChannel.send(welcomeMsg)
+		const dmc = member.user.dmChannel || member.user.createDM();
+		dmc.send(welcomeMsg)
 			.then(message => console.log(`Sent message: ${message.content}`))
 			.catch(console.error);
 	}
@@ -249,7 +259,8 @@ client.on('guildMemberRemove', async member => {
 	if (member.roles.some(role => role.name === config.roleName)) {
 		// if this user was already verified
 		console.assert(token === undefined);
-		member.user.dmChannel.send(`Hello again! I see you just left the server ${member.guild.name}, on which you were verified as an ETH student using your ETH mail. 
+		const dmc = member.user.dmChannel || member.user.createDM();
+		dmc.send(`Hello again! I see you just left the server ${member.guild.name}, on which you were verified as an ETH student using your ETH mail. 
 		Please note that your nethz is still marked as "already used for verification". This is because I cannot tell what your nethz is from your Discord account.
 		If you wish to join ${member.guild.name} again and verify yourself as an ETH student again, please contact one of ${member.guild.name}'s admins, so that they can unmark your nethz as "already used" manually.`);
 	} else if (token) {
