@@ -28,6 +28,7 @@ The fields of the `config.json` file to be used is described by the sample file 
 - debug
 - (optional) handle "The email address you entered couldn't be found" emails with https://nodemailer.com/smtp/dsn/ and https://www.npmjs.com/package/imap
 - [x] store a salted hash of the nethz, so that any given nethz can only be used once
+- (optional) use persistent storage for Keyv
 
 ### Useful links
 - https://nodemailer.com/about/
