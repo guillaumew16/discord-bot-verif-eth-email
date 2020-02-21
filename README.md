@@ -9,7 +9,7 @@ A discord bot to "verify" that a user joining the server is indeed an ETH studen
 Remarks:
 - the token has an expiration date
 - the bot must have an outgoing email address not blacklisted by ETH's mail server
-- nethz is never stored in database (only Discord User-ID)
+- upon completion of the process, a salted hash of the nethz used is stored in database, and marked as "already used for verification"; no nethz/Discord-User-ID association is stored
 
 ## Config
 The fields of the `config.json` file to be used is described by the sample file `config-dist.json`

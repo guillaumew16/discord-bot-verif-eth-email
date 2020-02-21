@@ -14,17 +14,18 @@ const crypto = require('crypto');
  * @param {string} salt - Data to be validated.
  */
 const sha512 = function(toHash, salt){
-	var hash = crypto.createHmac('sha512', salt); /** Hashing algorithm sha512 */
+	let hash = crypto.createHmac('sha512', salt); /** Hashing algorithm sha512 */
 	hash.update(toHash);
-	return value = hash.digest('hex');
+	return hash.digest('hex');
 };
 
 const HOURS_TO_MILLISECONDS = 3600 * 1000;
 
 const client = new Discord.Client();
 const converter = new showdown.Converter();
-const discordUserId2token = new Keyv(); // for in-memory storage of Discord User-ID / token pairs
-const token2nethzHash = new Keyv({ namespace: "token_to_nethz_hashs" }); // the nethz / token pairs
+// use Keyv with in-memory storage
+const discordUserId2token = new Keyv({ namespace: "discord_user_id_to_token"}); // Discord User-ID / token pairs
+const token2nethzHash = new Keyv({ namespace: "token_to_nethz_hash" }); // nethz / token pairs
 const verifiedNethzHashs = new Keyv({ namespace: "verified_nethz_hashs" }); // the set of hashs of nethzs already used for verification
 discordUserId2token.on('error', err => console.error('Keyv connection error:', err));
 token2nethzHash.on('error', err => console.error('Keyv connection error:', err));
@@ -47,7 +48,7 @@ const availableCommandsStr = `Available commands:
 	!welcomeagain: print the welcome message again, with all the instructions for the verification process
 `;
 
-const welcomeMsg = `You are currently not verified as an ETH student, so you only have access to a restricted number of channels.
+const welcomeMsg = `You are currently not verified as an ETH student on ${theGuild.name}, so you only have access to a restricted number of channels.
 To verify yourself as an ETH student, 
 	1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; e.g \`nethz ${sampleNethz}\`
 	2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`${sampleToken}\`
@@ -56,7 +57,7 @@ Remarks:
 	- To reset the process, e.g if you misspelled your nethz, just do step 1 again. (I will invalidate the previous token, don't worry.)
 	- My email address, which I will use in step 2, is ${botMail.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${botMail.user}.)
 	- Once you receive the email, you have ${config.tokenTTL} hours to accomplish step 3, as the token expires after that duration.
-	- I will not store your nethz in database at any point (I only use your Discord User-ID).
+	- I will store a salted hash of your nethz in database. (This is to prevent a student from verifying multiple Discord accounts.) I will *not* keep track of which Discord account your nethz corresponds to, and vice-versa.
 I am a very stupid bot. If you have any questions or encounter any problem, please send a message to an admin of this server directly.
 `;
 
@@ -131,7 +132,8 @@ client.on('message', async message => {
 			const nethz = args[0].toLowerCase();
 			const nethzHash = sha512(nethz, config.commonSalt);
 			if (await verifiedNethzHashs.get(nethzHash)) {
-				return message.channel.send(`This nethz was already used to verify a different Discord user. If you did not do it, your nethz and/or ETH mail inbox may have been used by another person! Then, please contact an administrator of ${theGuild.name}.`);
+				return message.channel.send(`This nethz was already used to verify a different Discord user. 
+				If you did not do it, your nethz and/or ETH mail inbox may have been used by another person! Then, please contact an administrator of ${theGuild.name}.`);
 			} else {
 				const newToken = randtoken.uid(16);
 				// save newToken, along with user.username and user.id, and set expiration time
@@ -178,9 +180,32 @@ client.on('message', async message => {
 });
 
 client.on('guildMemberAdd', member => {
-	const msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
+	if (member.guild.id === config.theGuildId) {
+		const msgToSend = `Hello! I see you just joined the server ${member.guild.name}. \n${welcomeMsg}`;
 
-	member.user.dmChannel.send(msgToSend)
-		.then(message => console.log(`Sent message: ${message.content}`))
-		.catch(console.error);
+		member.user.dmChannel.send(msgToSend)
+			.then(message => console.log(`Sent message: ${message.content}`))
+			.catch(console.error);
+	}
+});
+
+client.on('guildMemberRemove', async member => {
+	const discordUserId = member.user.id;
+	const token = await discordUserId2token.get(discordUserId); // may be `undefined` if no such key
+	const nethzHash = await token2nethzHash.get(token); // TODO: does calling .get with an undefined parameter work as expected, i.e return undefined?
+	if (member.roles.some(role => role.name === config.roleName)) {
+		// if this user was already verified
+		console.assert(token === undefined);
+		console.assert(nethzHash === undefined);
+		member.user.dmChannel.send(`Hello again! I see you just left the server ${member.guild.name}, and were verified as an ETH student using your ETH mail. 
+		Please note that your nethz is still marked as "already used for verification". This is because I cannot tell what your nethz is from your Discord account.
+		If you wish to join ${member.guild.name} again and verify yourself as an ETH student again, please contact one of ${member.guild.name}'s admins, so that they can unmark your nethz as "already used" manually.`);
+	} else if (nethzHash) {
+		// if this user was pending verification, reset the verif process for her
+		await discordUserId2token.delete(member.user.id);
+		await token2nethzHash.delete(token);
+		await verifiedNethzHashs.delete(nethzHash);
+	} else {
+
+	}
 });
