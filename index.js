@@ -154,4 +154,8 @@ client.on('guildMemberAdd', member => {
 		.catch(console.error);
 });
 
+client.on('guildMemberRemove', async member => {
+	await keyv.delete(member.user.id); // if this user was pending verification, reset the verif process for her
+});
+
 client.login(config.token);
