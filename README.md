@@ -25,6 +25,9 @@ The fields of the `config.json` file to be used is described by the sample file 
 - The `tokenTTL` field is in hours
 - The `commonSalt` field is used to "salt" the nethz before hashing them (otherwise we risk dictionary attack, since nethz's are short). Note that we use a common salt for all nethz's, contrary to what is usually meant by "salting" (typically for passwords), since we don't have keys (typically username), just the hashed values.
 
+### Running on a VM
+Use `yarn startdist` (resp. `yarn stopdist`) to start (resp. stop) the bot. (After starting the bot you can just walk away until you decide to stop it). The lines are from https://medium.com/google-cloud/skys-the-limit-google-cloud-platform-9dd7fa3354e4#ca49
+
 ## Notes for devs
 (This is, and will remain, a really small project, so we dump here whatever would normally be in a CONTRIBUTING file)
 

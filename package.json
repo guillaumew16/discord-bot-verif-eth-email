@@ -6,6 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node .",
+    "startdist": "nohup node main.js > log.txt 2>&1 & echo $! > pid.txt",
+    "stopdist": "kill $(tail pid.txt)",
     "lint": "eslint ."
   },
   "repository": {
