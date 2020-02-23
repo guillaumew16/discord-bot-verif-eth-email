@@ -34,10 +34,11 @@ const HOURS_TO_MILLISECONDS = 3600 * 1000;
 
 const client = new Discord.Client();
 const converter = new showdown.Converter();
-// use Keyv with in-memory storage
-const discordUserId2token = new Keyv({ namespace: "discord_user_id_to_token" }); // Discord User-ID / token pairs
-const token2nethzHash = new Keyv({ namespace: "token_to_nethz_hash" }); // nethz / token pairs
-const verifiedNethzHashs = new Keyv({ namespace: "verified_nethz_hashs" }); // the set of hashs of nethzs already used for verification (only the keys are relevant; value is always `true`)
+// use Keyv with sqlite storage
+const sqlite_uri = "sqlite://db.sqlite3";
+const discordUserId2token = new Keyv(sqlite_uri, { namespace: "discord_user_id_to_token" }); // Discord User-ID / token pairs
+const token2nethzHash = new Keyv(sqlite_uri, { namespace: "token_to_nethz_hash" }); // nethz / token pairs
+const verifiedNethzHashs = new Keyv(sqlite_uri, { namespace: "verified_nethz_hashs" }); // the set of hashs of nethzs already used for verification (only the keys are relevant; value is always `true`)
 discordUserId2token.on('error', err => console.error('Keyv connection error:', err));
 token2nethzHash.on('error', err => console.error('Keyv connection error:', err));
 verifiedNethzHashs.on('error', err => console.error('Keyv connection error:', err));

@@ -11,7 +11,14 @@ Remarks:
 - the bot must have an outgoing email address not blacklisted by ETH's mail server
 - upon completion of the process, a salted hash of the nethz used is stored in database, and marked as "already used for verification"; no nethz/Discord-User-ID association is stored
 
-## Config
+## Setup
+
+- git clone this repo
+- `yarn` (or `npm i`)
+- `cp config-dist.json config.json` and fill the config file (cf section "Config")
+- `yarn start`
+
+### Config
 The fields of the `config.json` file to be used is described by the sample file `config-dist.json`
 - The `transportOptions` field is passed directly to nodemailer.createTransport, which is documented here: https://nodemailer.com/smtp/
 - The `theGuildId` field holds the ID of the (unique) discord server that should be using this bot. (Yes we support only serving one server, since that is exactly our goal.)
@@ -22,19 +29,13 @@ The fields of the `config.json` file to be used is described by the sample file 
 (This is, and will remain, a really small project, so we dump here whatever would normally be in a CONTRIBUTING file)
 
 ### TODO
-- setup a mail address for the bot
-- fill the `config.json`
-- test
-- debug
 - (optional) handle "The email address you entered couldn't be found" emails with https://nodemailer.com/smtp/dsn/ and https://www.npmjs.com/package/imap
-- [x] store a salted hash of the nethz, so that any given nethz can only be used once
-- (optional) use persistent storage for Keyv
 
 ### Useful links
-- https://nodemailer.com/about/
-- https://nodemailer.com/usage/using-gmail/
 - https://github.com/discordjs/guide/blob/master/code-samples/creating-your-bot/commands-with-user-input/11/index.js
 > Rk: that link is a strict subset of  https://github.com/discordjs/guide/blob/master/code-samples/command-handling/adding-features/11/index.js (which is the code sample for a later step of the same tutorial), but since we only need to respond to very few commands, that link is actually more relevant
-- https://discordjs.guide/popular-topics/common-questions.html#how-do-i-add-a-role-to-a-guild-member
 - https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-guildMemberAdd
-- https://discordjs.guide/keyv/#installation
+- https://discordjs.guide/popular-topics/common-questions.html#how-do-i-add-a-role-to-a-guild-member
+- https://discordjs.guide/keyv/
+- https://nodemailer.com/about/
+- https://nodemailer.com/usage/using-gmail/
