@@ -6,6 +6,9 @@ const randtoken = require('rand-token');
 const Keyv = require('keyv');
 const crypto = require('crypto');
 
+const os = require("os");
+const hostname = os.hostname();
+
 /**
  * hash password with sha512.
  * source: https://ciphertrick.com/salt-hash-passwords-using-nodejs-crypto/
@@ -125,7 +128,8 @@ client.once('ready', async () => {
 			.catch(console.error);
 	}
 	// check that we can send email
-	const textContent = "yo yo yo this is a test email";
+	
+	const textContent = `yo yo yo this is a test email. The bot "${client.user.username}" was just started on host ${hostname}.`;
 	const info = await transporter.sendMail({
 		from: {
 			name: client.user.username,
@@ -289,9 +293,9 @@ client.on('message', async message => {
 	}
 });
 
-client.on('guildMemberAdd', member => {
+client.on('guildMemberAdd', async member => {
 	if (member.guild.id === config.theGuildId) {
-		const dmc = member.user.dmChannel || member.user.createDM();
+		const dmc = member.user.dmChannel || await member.user.createDM();
 		dmc.send(welcomeMsg(member.guild.name))
 			.then(message => console.log(`Sent message: ${message.content}`))
 			.catch(console.error);
