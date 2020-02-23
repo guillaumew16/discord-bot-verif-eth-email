@@ -33,6 +33,7 @@ Use `yarn startdist` (resp. `yarn stopdist`) to start (resp. stop) the bot. (Aft
 
 ### TODO
 - (optional) handle "The email address you entered couldn't be found" emails with https://nodemailer.com/smtp/dsn/ and https://www.npmjs.com/package/imap
+- the `!verify` command is currently useless, since you can't mention a user that's not in the current channel in Discord...
 
 ### Useful links
 - https://github.com/discordjs/guide/blob/master/code-samples/creating-your-bot/commands-with-user-input/11/index.js

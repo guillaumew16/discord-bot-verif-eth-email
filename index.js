@@ -65,7 +65,9 @@ const availableCommandsStr = `Available commands:
 const adminCommandsStr = `Admin-only commands:
 	\`!unmark\` (admin only): unmark a nethz as "already used for verification"; e.g \`!unmark ${sampleNethz}\`
 	\`!purgereqs\` (admin only): delete all active tokens, by clearing discordUserId2token and token2nethzHash
-	\`!purgemarks\` (admin only): unmark all nethzs, by clearing verifiedNethzHashs. WARNING: doing this is rarely a good idea...
+		WARNING: this leads to unexpected behaviour from the point of view of users who are pending verification...
+	\`!purgemarks\` (admin only): unmark all nethzs, by clearing verifiedNethzHashs. 
+		WARNING: doing this is rarely a good idea...
 	\`!verify\` (admin only): manually verify a user; e.g \`!verify @${sampleDiscordUsername}\`
 	\`!adminhelp\` (admin only): print this message
 (Note: admin commands are only used in the admin channel #${config.adminChannelName}, whereas normal commands are only used in DM channels.)
