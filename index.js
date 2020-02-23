@@ -74,15 +74,17 @@ const adminCommandsStr = `Admin-only commands:
 const welcomeMsg = (guildName) => `Hello! I see you just joined the server **${guildName}**.
 You are currently not verified as an ETH student on **${guildName}**, so you only have access to a restricted number of channels.
 To verify yourself as an ETH student, 
-	1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; e.g \`nethz ${sampleNethz}\`
-	2. I will send an email at <nethz>@student.ethz.ch containing a token; e.g \`${sampleToken}\`
-	3. then, show me that you did receive the token, by telling me: \`!token \` + the token; e.g \`token ${sampleToken}\`
+	1. please tell me your nethz (i.e ETH username) in the following format: \`!nethz \` + your nethz; 
+		e.g: \`!nethz ${sampleNethz}\`
+	2. I will send an email at <nethz>@student.ethz.ch containing a token
+	3. then, show me that you did receive the token, by telling me: \`!token \` + the token; 
+		e.g: \`!token ${sampleToken}\`
 Remarks:
 	- To reset the process, e.g if you misspelled your nethz, just do step 1 again. (I will invalidate the previous token, don't worry.)
-	- My email address, which I will use in step 2, is ${botMail.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${botMail.user}.)
+	- My email address, which I will use in step 2, is ${botMail.user}; please check in your spam folder if you don't receive anything. (Note that no human will check the inbox of ${botMail.user}, except for debugging.)
 	- Once you receive the email, you have ${config.tokenTTL} hours to accomplish step 3, as the token expires after that duration.
 	- I will store a salted hash of your nethz in database. (This is to prevent a student from verifying multiple Discord accounts.) I will *not* keep track of which Discord account your nethz corresponds to, and vice-versa.
-I am a very stupid bot. If you have any questions or encounter any problem, please send a message to an admin of this server directly.
+I am a very stupid bot. If you have any questions or encounter any problem, please send a message to an admin of **${guildName}** directly.
 `;
 
 const genMailContent = (discordUsername, token, guildName, botName) => `Hello, \n
