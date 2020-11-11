@@ -171,6 +171,21 @@ client.on('message', async message => {
 					return message.channel.send(`Unmarked nethz ${nethz} as "already used for verification".`);
 				}
 			}
+		} else if (command === 'mark') {
+			if (!args.length) {
+				return message.channel.send(`You didn't provide any nethz! Usage: e.g \`!mark ${sampleNethz}\``);
+			} else if (args.length > 1) {
+				return message.channel.send(`You provided too many arguments... Usage: e.g \`!mark ${sampleNethz}\``);
+			} else {
+				const nethz = args[0].toLowerCase();
+				const nethzHash = sha512(nethz, config.commonSalt);
+				if (await verifiedNethzHashs.get(nethzHash)) {
+					return message.channel.send(`This nethz ${nethz} is already marked as "already used for verification". No action was performed.`);
+				} else {
+					await verifiedNethzHashs.set(nethzHash, true);
+					return message.channel.send(`Marked nethz ${nethz} as "already used for verification".`);
+				}
+			}
 		} else if (command === 'purgereqs') {
 			if (args.length) {
 				message.channel.send(`Warning: !${command} normally does not take any arguments. Arguments were ignored.`);
@@ -184,7 +199,7 @@ client.on('message', async message => {
 			}
 			await verifiedNethzHashs.clear();
 			return message.channel.send(`Unmarked all previously marked nethzs as "already used for verification".`);
-		} else if (command === 'verify') {
+		} else if (command === 'verify') { // unusable as it is, because cannot mention Discord users in the admin channel if they are not in it. TODO
 			if (!args.length) {
 				return message.channel.send(`You didn't provide any (Discord) user to verify! Usage: e.g \`!verify ${sampleDiscordUsername}\``);
 			} else if (args.length > 1) {
