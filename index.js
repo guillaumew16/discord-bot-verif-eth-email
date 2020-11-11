@@ -340,8 +340,5 @@ client.on('guildMemberRemove', async member => {
 		// if this user was pending verification, reset the verif process for her
 		await discordUserId2token.delete(member.user.id);
 		await token2nethzHash.delete(token);
-	} else {
-		console.log("Detected a guildMemberRemove but the guild id does not match. No action was taken.");
-		console.log(`member.guild.id: ${member.guild.id}; config.theGuildId: ${config.theGuildId}`);
 	}
 });
