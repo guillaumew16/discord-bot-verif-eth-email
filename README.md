@@ -43,3 +43,4 @@ Use `yarn startdist` (resp. `yarn stopdist`) to start (resp. stop) the bot. (Aft
 - https://discordjs.guide/keyv/
 - https://nodemailer.com/about/
 - https://nodemailer.com/usage/using-gmail/
+- (2020-11) Concerning the "privileged intent" mess: https://github.com/discordjs/discord.js/issues/2917

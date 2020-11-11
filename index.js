@@ -30,7 +30,7 @@ function getUserFromMention(mention) {
 	if (!matches) return;
 	// However the first element in the matches array will be the entire mention, not just the ID, so use index 1.
 	const id = matches[1];
-	return client.users.get(id);
+	return client.users.cache.get(id);
 }
 
 const HOURS_TO_MILLISECONDS = 3600 * 1000;
@@ -113,18 +113,18 @@ transporter.verify(function (error, success) {
 });
 
 client.once('ready', async () => {
-	const theGuild = client.guilds.get(config.theGuildId);
+	const theGuild = client.guilds.cache.get(config.theGuildId);
 	if (!theGuild.available) {
 		console.warn("theGuild.available is false (it indicates a server outage)");
 	}
 	// check that the bot can read/write in the config.adminChannelName channel
-	const adminChannel = theGuild.channels.find(channel => channel.name === config.adminChannelName);
+	const adminChannel = theGuild.channels.cache.find(channel => channel.name === config.adminChannelName);
 	const readWritePerms = ['VIEW_CHANNEL', 'SEND_MESSAGES'];
 	if (!theGuild.me.permissionsIn(adminChannel).has(readWritePerms)) {
 		throw Error(`bot doesn't have read/write permission in admin channel ${config.adminChannelName}`);
 	}
 	// create role config.roleName if does not exist
-	if (!theGuild.roles.some(role => role.name === config.roleName)) {
+	if (!theGuild.roles.cache.some(role => role.name === config.roleName)) {
 		theGuild.createRole({
 			name: config.roleName
 		})
@@ -194,12 +194,12 @@ client.on('message', async message => {
 				if (!user) {
 					return message.channel.send("Please use a proper mention!");
 				}
-				const theGuild = client.guilds.get(config.theGuildId);
-				const member = theGuild.members.get(user.id);
-				if (member.roles.some(role => role.name === config.roleName)) {
+				const theGuild = client.guilds.cache.get(config.theGuildId);
+				const member = theGuild.members.cache.get(user.id);
+				if (member.roles.cache.some(role => role.name === config.roleName)) {
 					return message.channel.send(`That user already has the "${config.roleName}" role!`);
 				}
-				const role = theGuild.roles.find(role => role.name === config.roleName);
+				const role = theGuild.roles.cache.find(role => role.name === config.roleName);
 				member.addRole(role);
 				return message.channel.send(`<@${user.id}> now has the "${config.roleName}" role, and has access to the student-only channels.`);
 			}
@@ -213,11 +213,12 @@ client.on('message', async message => {
 		if (!message.content.startsWith(prefix)) {
 			return message.channel.send(`I am a very stupid bot, I only respond to commands. ${availableCommandsStr}`);
 		}
-		const theGuild = client.guilds.get(config.theGuildId);
+		const theGuild = client.guilds.cache.get(config.theGuildId);
 		const args = message.content.slice(prefix.length).split(/ +/);
 		const command = args.shift().toLowerCase();
 		const user = message.author; // user (: User) and member (: GuildMember) refer to the same person (`member.user` is `user`), but member holds information about the relation to the guild
-		const member = theGuild.members.get(user.id);
+		// const member = theGuild.members.cache.get(user.id);
+		const member = await theGuild.members.fetch(user.id);
 
 		if (command === 'ping') {
 			return message.channel.send('Pong');
@@ -226,7 +227,7 @@ client.on('message', async message => {
 				return message.channel.send(`You didn't provide any nethz! Usage: e.g \`!nethz ${sampleNethz}\``);
 			} else if (args.length > 1) {
 				return message.channel.send(`You provided too many arguments... Usage: e.g \`!nethz ${sampleNethz}\``);
-			} else if (member.roles.some(role => role.name === config.roleName)) {
+			} else if (member.roles.cache.some(role => role.name === config.roleName)) {
 				return message.channel.send(`You are already verified as an ETH student on the Discord server **${theGuild.name}**!`);
 			} else {
 				const nethz = args[0].toLowerCase();
@@ -258,6 +259,7 @@ client.on('message', async message => {
 						html: converter.makeHtml(textContent.replace('\n', '\n\n'))
 					});
 					console.log("Message sent: %s", info.messageId);
+					console.log(`token-email was sent for Discord user ${user.username}`);
 					return message.channel.send(`An email was sent to ${nethz}@student.ethz.ch, containing a token that you should now report back to me, using the \`!token\` command.`);
 				}
 			}
@@ -266,7 +268,7 @@ client.on('message', async message => {
 				return message.channel.send(`You didn't write any token! Usage: e.g \`!token ${sampleToken}\``);
 			} else if (args.length > 1) {
 				return message.channel.send(`You provided too many arguments... Usage: e.g \`!token ${sampleToken}\``);
-			} else if (member.roles.some(role => role.name === config.roleName)) {
+			} else if (member.roles.cache.some(role => role.name === config.roleName)) {
 				return message.channel.send(`You are already verified as an ETH student on the Discord server **${theGuild.name}**!`);
 			} else if (!await discordUserId2token.get(user.id)) {
 				return message.channel.send(`You haven't provided a nethz to verify yourself as!`);
@@ -276,7 +278,7 @@ client.on('message', async message => {
 				if (token !== trueToken) {
 					return message.channel.send(`This is not the right token.`);
 				} else {
-					const role = theGuild.roles.find(role => role.name === config.roleName);
+					const role = theGuild.roles.cache.find(role => role.name === config.roleName);
 					member.addRole(role);
 					const nethzHash = await token2nethzHash.get(token); // store a hash  of this nethz to prevent this student from verifying multiple Discord users
 					console.assert(!await verifiedNethzHashs.get(nethzHash));
@@ -301,18 +303,21 @@ client.on('guildMemberAdd', async member => {
 	if (member.guild.id === config.theGuildId) {
 		const dmc = member.user.dmChannel || await member.user.createDM();
 		dmc.send(welcomeMsg(member.guild.name))
-			.then(message => console.log(`Sent message: ${message.content}`))
+			.then(message => console.log(`Sent welcome message to member: ${member.guild.name}`))
 			.catch(console.error);
+	} else {
+		console.log("Detected a guildMemberAdd but the guild id does not match. No action was taken."); // (for debug)
+		console.log(`member.guild.id: ${member.guild.id}; config.theGuildId: ${config.theGuildId}`);
 	}
 });
 
 client.on('guildMemberRemove', async member => {
 	const discordUserId = member.user.id;
 	const token = await discordUserId2token.get(discordUserId); // may be `undefined` if no such key
-	if (member.roles.some(role => role.name === config.roleName)) {
+	if (member.roles.cache.some(role => role.name === config.roleName)) {
 		// if this user was already verified
 		console.assert(token === undefined);
-		const dmc = member.user.dmChannel || member.user.createDM();
+		const dmc = member.user.dmChannel || await member.user.createDM();
 		dmc.send(`Hello again! I see you just left the server ${member.guild.name}, on which you were verified as an ETH student using your ETH mail. 
 		Please note that your nethz is still marked as "already used for verification". This is because I cannot tell what your nethz is from your Discord account.
 		If you wish to join ${member.guild.name} again and verify yourself as an ETH student again, please contact one of ${member.guild.name}'s admins, so that they can unmark your nethz as "already used" manually.`);
@@ -320,5 +325,8 @@ client.on('guildMemberRemove', async member => {
 		// if this user was pending verification, reset the verif process for her
 		await discordUserId2token.delete(member.user.id);
 		await token2nethzHash.delete(token);
+	} else {
+		console.log("Detected a guildMemberRemove but the guild id does not match. No action was taken.");
+		console.log(`member.guild.id: ${member.guild.id}; config.theGuildId: ${config.theGuildId}`);
 	}
 });
