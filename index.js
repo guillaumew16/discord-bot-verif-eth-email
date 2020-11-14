@@ -64,6 +64,7 @@ const availableCommandsStr = `Available commands:
 
 const adminCommandsStr = `Admin-only commands:
 	\`!unmark\` (admin only): unmark a nethz as "already used for verification"; e.g \`!unmark ${sampleNethz}\`
+	\`!mark\` (admin only): mark a nethz as "already used for verification"; e.g \`!mark ${sampleNethz}\`
 	\`!purgereqs\` (admin only): delete all active tokens, by clearing discordUserId2token and token2nethzHash
 		WARNING: this leads to unexpected behaviour from the point of view of users who are pending verification...
 	\`!purgemarks\` (admin only): unmark all nethzs, by clearing verifiedNethzHashs. 
@@ -215,7 +216,7 @@ client.on('message', async message => {
 					return message.channel.send(`That user already has the "${config.roleName}" role!`);
 				}
 				const role = theGuild.roles.cache.find(role => role.name === config.roleName);
-				member.addRole(role);
+				member.roles.add(role);
 				return message.channel.send(`<@${user.id}> now has the "${config.roleName}" role, and has access to the student-only channels.`);
 			}
 		} else if (command === 'adminhelp') {
@@ -294,7 +295,7 @@ client.on('message', async message => {
 					return message.channel.send(`This is not the right token.`);
 				} else {
 					const role = theGuild.roles.cache.find(role => role.name === config.roleName);
-					member.addRole(role);
+					member.roles.add(role);
 					const nethzHash = await token2nethzHash.get(token); // store a hash  of this nethz to prevent this student from verifying multiple Discord users
 					console.assert(!await verifiedNethzHashs.get(nethzHash));
 					await verifiedNethzHashs.set(nethzHash, true);
