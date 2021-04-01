@@ -4,3 +4,11 @@ db.sqlite3
 log.txt
 log*.txt
 pid.txt
+
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
