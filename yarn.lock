@@ -533,7 +533,7 @@ __metadata:
     discord.js: ^12.5.2
     eslint: ^7.23.0
     keyv: ^4.0.3
-    nodemailer: ^6.5.0
+    nodemailer: ^6.9.8
     rand-token: ^1.0.1
     showdown: ^1.9.1
   languageName: unknown
@@ -1537,10 +1537,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nodemailer@npm:^6.5.0":
-  version: 6.5.0
-  resolution: "nodemailer@npm:6.5.0"
-  checksum: 9611c14a6f52475a0bea626fa342cf263a67d324c30b6349da099164ab66c6d63bc3d67453fe5d41ae7ab13d9a42cfb45cb5623f1a2e91135a929bada7f9bf83
+"nodemailer@npm:^6.9.8":
+  version: 6.9.8
+  resolution: "nodemailer@npm:6.9.8"
+  checksum: 86ad01f328e05568bb6b0e3be09cd70cfc555a63ad2cb088e93b919a8a8d5aefaded7b4ed6781dc80fa459879a18a962ab085e490780ab22a1fe8fa2bb93978d
   languageName: node
   linkType: hard
 
